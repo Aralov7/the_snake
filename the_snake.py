@@ -3,8 +3,8 @@ from random import choice
 import pygame
 
 # Константы для размеров поля и сетки:
-SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
-GRID_SIZE = 20
+SCREEN_WIDTH, SCREEN_HEIGHT = 480, 480
+GRID_SIZE = 40
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
@@ -27,7 +27,8 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 20
+SPEED = 10
+
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -61,8 +62,8 @@ class Apple(GameObject):
 
     def randomize_position(self) -> tuple:
         """Возвращает кортеж из двух случайных интов"""
-        x_cord = choice(range(0, SCREEN_WIDTH, 20))
-        y_cord = choice(range(0, SCREEN_HEIGHT, 20))
+        x_cord = choice(range(0, SCREEN_WIDTH, GRID_SIZE))
+        y_cord = choice(range(0, SCREEN_HEIGHT, GRID_SIZE))
         self.position = (x_cord, y_cord)
         return (x_cord, y_cord)
 
@@ -96,12 +97,25 @@ class Snake(GameObject):
         head_position = self.get_head_position()
 
         new_head_position = (
-            (head_position[0] + self.direction[0] * 20) % SCREEN_WIDTH,
-            (head_position[1] + self.direction[1] * 20) % SCREEN_HEIGHT)
+            (head_position[0] + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH,
+            (head_position[1] + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT)
+
+
+        # if ((head_position[0] + self.direction[0] * GRID_SIZE) // SCREEN_WIDTH >= 1
+        # ) or ((head_position[1] + self.direction[1] * GRID_SIZE) // SCREEN_HEIGHT >= 1
+        # ) or (head_position[0] + self.direction[0] < 0
+        # ) or (head_position[1] + self.direction[1] < 0):
+        #     self.reset()
+        #     return
+        # else:
+        #     new_head_position = (
+        #         (head_position[0] + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH,
+        #         (head_position[1] + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT)   
+                     
         if new_head_position in self.positions[2:]:
             self.reset()
             return
-
+        
         self.positions.insert(0, new_head_position)
         if len(self.positions) > self.length:
             self.last = self.positions.pop()
@@ -126,7 +140,7 @@ class Snake(GameObject):
         return self.positions[0]
 
     def reset(self) -> None:
-        """НАчнем все с чистого листа"""
+        """Начнем все с чистого листа"""
         screen.fill(BOARD_BACKGROUND_COLOR)
         self.length = 1
         self.position = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
@@ -143,14 +157,15 @@ def handle_keys(game_object: GameObject) -> None:
             pygame.quit()
             raise SystemExit
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and game_object.direction != DOWN:
+            if (event.key == pygame.K_UP or event.key == pygame.K_w) and game_object.direction != DOWN:
                 game_object.next_direction = UP
-            elif event.key == pygame.K_DOWN and game_object.direction != UP:
+            elif (event.key == pygame.K_DOWN or event.key == pygame.K_s) and game_object.direction != UP:
                 game_object.next_direction = DOWN
-            elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
+            elif (event.key == pygame.K_LEFT or event.key == pygame.K_a) and game_object.direction != RIGHT:
                 game_object.next_direction = LEFT
-            elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
+            elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and game_object.direction != LEFT:
                 game_object.next_direction = RIGHT
+            
 
 
 def main():
@@ -168,6 +183,10 @@ def main():
         if snake.get_head_position() == apple.position:
             snake.length += 1
             apple.randomize_position()
+            while(apple.position in snake.positions):
+                apple.randomize_position()
+
+            
         snake.draw()
         apple.draw()
         pygame.display.update()
